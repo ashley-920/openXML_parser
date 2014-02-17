@@ -1,7 +1,7 @@
 openXML_parser
 ==============
 
-This is an parser which can parse openXML file and detect malicious content.  
+This is a parser which can parse openXML file and detect malicious content.  
 NOTICE: THIS IS STILL UNDER DEVELOPMENT  
 
 command:  
