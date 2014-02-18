@@ -28,11 +28,11 @@ def del_temp(tmp):
 		shutil.rmtree(unzip, True)
 
 def process_file(file_path, des_file_path):
-	global temp_path
+	global temp_path	
 	temp_path=des_file_path
+	mkdir_temp(temp_path)
 	#size = os.path.getsize(file_path)
-	#print "%s %d" % (file_path, size)
-
+	#print "%s %d" % (file_path, size)	
 	filetype = ''
 	#temp = os.path.join(os.environ['TEMP'], fn)
 	# temp = os.path.join("z:\\tmp", fn)
@@ -42,13 +42,15 @@ def process_file(file_path, des_file_path):
 	#shutil.copy2(file_path, temp)
 	# upath = temp.encode('cp950', 'ignore')
 	upath = file_path.encode('cp950', 'ignore')
+	#upath = file_path
 
 	prog_7z = os.path.join(os.path.dirname(__file__), '7z.exe')
+	#print upath
 	content = ''.join(os.popen(prog_7z + " l " + '"' + upath + '"').readlines())
-
+	#print content	
 	bound="------------------- ----- ------------ ------------  ------------------------\n"
 	content = content[content.find(bound)+len(bound):content.rfind(bound)]
-
+	
 	flist = []
 	for m in content.split('\n'):
 		if not m[20:21] == 'D' and len(m) > 0:
@@ -166,9 +168,11 @@ def find_file(dir_name):
 
 	FindClose(fldr)
 
+
+
 if __name__ == '__main__':
 	if len(sys.argv) >= 2:
-		find_file(sys.argv[1])
+		process_file(sys.argv[1],sys.argv[2])
 	else:
 		print "Syntex : \n\t%s path" % sys.argv[0]
 
