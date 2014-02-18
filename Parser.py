@@ -10,10 +10,22 @@ flash_match=0
 listview_match=0
 
 def analysis_File(file_path):
-    print(file_path)
+    #print(file_path)
     #if zipfile.is_zipfile(file_path) and check_File_Type(get_File_Type(file_path)):  
-    if zipfile.is_zipfile(file_path):      
-        printReport(file_path)
+    if zipfile.is_zipfile(file_path):
+        filetype=get_File_Type(file_path)
+        print_File_info(file_path)
+        printTitle("Dir Info")        
+        file_list=get_file_dir(file_path)
+        for filename in file_list:
+            print filename
+        printContentTypeInfo(file_path)
+        printActiveXInfo(file_path)
+        # printReport(file_path)
+        if filetype == 'PPTX':
+            check_vml_info(file_path)
+        elif filetype == 'DOCX':
+            check_doc_info(file_path)
         if flash_match > 0:
             process_flash(file_path, r'D:\tmp')
     else:
@@ -57,7 +69,7 @@ def printReport(file_path):
         print filename
     printContentTypeInfo(file_path)
     printActiveXInfo(file_path)
-    print_vml_info(file_path)
+    check_vml_info(file_path)
 
         #printContentTypeInfo()
 
@@ -81,7 +93,7 @@ def printActiveXInfo(file_path):
     if not found: print("This File Contain No ActiveX related file")
        
 
-def print_vml_info(file_path):
+def check_vml_info(file_path):
     #dir_name={"docx":"word","xlsx":"xl","pptx":"ppt"}
     global flash_match
     global listview_match
@@ -111,6 +123,15 @@ def print_vml_info(file_path):
     else:
         print("No vmlDrawing.xml file")
 
+def check_doc_info(file_path):
+    global flash_match
+    printTitle("document.xml Info")
+    doc_path=r"word/document.xml"
+    flash_string="ShockwaveFlash"
+    content=parseFile(file_path,doc_path)
+    flash_result=re.findall(flash_string,json.dumps(content, indent=4))
+    flash_match+=len(flash_result)
+    print(doc_path+" find "+str(len(flash_result))+" flash string match")
 
 
 def printFileContent(file_path,file_name):
@@ -254,7 +275,7 @@ if __name__ == '__main__':  # pragma: no cover
                 print("-pdir [file_path]                       => print unzip dir")
         elif(sys.argv[1] == "-pvml") :
             if len(sys.argv) == 3:
-                print_vml_info(sys.argv[2])
+                check_vml_info(sys.argv[2])
             else:
                 print("-pvml [file_path]                       => print vmlDrawing.xml info")
         elif(sys.argv[1] == "-e") :
