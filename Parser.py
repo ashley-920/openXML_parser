@@ -1,6 +1,6 @@
 import zipfile, xmltodict, json, dpath.util, os, re, sys, traceback
 from modules.docx_extract_swf import flash as flash
-from swf.movie import SWF
+#from swf.movie import SWF
 import swf_util
 
 #from lxml import etree
@@ -21,37 +21,50 @@ def analysis_File(file_path):
 
 
 def check_File_Type(file_type):
-    suffix={"docx","pptx","xlsx","zip"}        
+    suffix={"DOCX","PPTX","XLSX"}        
     if file_type in suffix:                      
         return True
     else:
         return False
+    
 
-def get_File_Type(file_path):    
-    file_type = os.path.splitext(file_path)[-1].lstrip('.')    
-    return file_type
+
+def get_File_Type(file_path):
+    file_list=get_file_dir(file_path)
+    filetype='unknown'
+    for filename in file_list:
+        #print "************************"+filename
+        if "word/document.xml" in filename:
+            filetype = 'DOCX'
+        elif "xl/workbook.xml" in filename:
+            filetype = 'XLSX'
+        elif "ppt/presentation.xml" in filename:
+            filetype = 'PPTX'
+    return filetype;
     
 
 def print_File_info(file_path):
     printTitle("File info")
     file_type=get_File_Type(file_path)
-    print("File Type:",file_type)
-    print("File Path:",file_path)
+    print "File Type: "+file_type
+    print "File Path: "+file_path
  
 def printReport(file_path):
     print_File_info(file_path)
-    printDir(file_path)
+    printTitle("Dir Info")
+    file_list=get_file_dir(file_path)
+    for filename in file_list:
+        print filename
     printContentTypeInfo(file_path)
     printActiveXInfo(file_path)
     print_vml_info(file_path)
 
         #printContentTypeInfo()
 
-def printDir(file_path):    
+def get_file_dir(file_path):    
     dfile=zipfile.ZipFile(file_path,'r')
-    #file_dir_list=dfile.infolist()
-    printTitle("Dir Info")        
-    dfile.printdir() 
+    #file_dir_list=dfile.infolist()            
+    return dfile.namelist()
 
 def printActiveXInfo(file_path):    
     printTitle("ActiveX Info")    
@@ -182,16 +195,20 @@ def getValue(file_path,file_name,tag_name):
 
 
 def process_flash(file_path, des_file_path):
-    printTitle("Process flash")
-    
+    #flash.process_file(file_path, des_file_path)
+    printTitle("Process flash")    
     file_name=os.path.basename(file_path)
-    if check_File_Type(file_path):
-        name=flash.process_file(file_path, des_file_path)    
+    #print file_name
+    if check_File_Type(get_File_Type(file_path)):
+        name=flash.process_file(file_path,des_file_path) 
+        print 'Extract %s swf file to:' % (len(name)) 
         for swf in name:
+            print '*%s' % (swf)
             swf_util.extract_actionscript(swf,swf+".txt")
     else:
         swf_util.extract_actionscript(file_path,des_file_path+"\\"+file_name+".txt")
-    
+   
+
     #swf_util.extract_actionscript("D:\\tmp\\flash2.pptx_FWS_00000C08","D:\\open_xml\\flash2.txt")
     # _file = open(r'C:\Users\Ash\Desktop\swf\twist.swf', 'rb')
     # print SWF(_file)
