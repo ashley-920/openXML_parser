@@ -13,3 +13,7 @@ command:
 -pfc [file_path] [file_name]            => print file content  
 -g [file_path] [file_name] [tag_name]   => get specific value of specific tag from specific file  
 -e [file_path] [dest_dir_path]          => extrace swf files from the file path and extract actionscript of the swf files to txt file  
+
+
+Example:
+Python Parser.py -a D:\open_xml\flash.pptx
