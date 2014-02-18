@@ -15,5 +15,5 @@ command:
 -e [file_path] [dest_dir_path]          => extrace swf files from the file path and extract actionscript of the swf files to txt file  
 
 
-Example:
+Example:  
 Python Parser.py -a D:\open_xml\flash.pptx
