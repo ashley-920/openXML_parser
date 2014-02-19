@@ -12,7 +12,7 @@ def extract_actionscript(file_path,des_text_path):
 	prog_swftools = os.path.dirname(__file__)+mod_dir
 	#print prog_swftools
 	test_command=prog_swftools+" -a "+file_path+" > "+des_text_path
-	print 'as file location: %s' % (des_text_path)
+	print 'actionscript file location: %s' % (des_text_path)
 	os.popen(test_command)
 
 if __name__ == '__main__':

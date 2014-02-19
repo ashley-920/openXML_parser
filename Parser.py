@@ -20,16 +20,18 @@ def analysis_File(file_path):
         for filename in file_list:
             print filename
         printContentTypeInfo(file_path)
-        printActiveXInfo(file_path)
+        
         # printReport(file_path)
-        if filetype == 'PPTX':
+        if filetype == 'PPTX' or filetype == 'XLSX':
             check_vml_info(file_path)
         elif filetype == 'DOCX':
             check_doc_info(file_path)
-        if flash_match > 0:
+        if getActiveXInfo(file_path) or flash_match >0:
             process_flash(file_path, r'D:\tmp')
+        # if flash_match > 0:
+        #     process_flash(file_path, r'D:\tmp')
     else:
-        print("This file can not be analysis")
+        print("File doesnt exsist or cannot be analysis")
 
 
 def check_File_Type(file_type):
@@ -68,7 +70,7 @@ def printReport(file_path):
     for filename in file_list:
         print filename
     printContentTypeInfo(file_path)
-    printActiveXInfo(file_path)
+    getActiveXInfo(file_path)
     check_vml_info(file_path)
 
         #printContentTypeInfo()
@@ -78,7 +80,7 @@ def get_file_dir(file_path):
     #file_dir_list=dfile.infolist()            
     return dfile.namelist()
 
-def printActiveXInfo(file_path):    
+def getActiveXInfo(file_path):    
     printTitle("ActiveX Info")    
     found=False
     dfile=zipfile.ZipFile(file_path,'r')
@@ -89,8 +91,9 @@ def printActiveXInfo(file_path):
             if not found:
                 found=True
                 file_contain_activeX=True
-            print("File:",filename)
+            print "File: ",filename
     if not found: print("This File Contain No ActiveX related file")
+    return found
        
 
 def check_vml_info(file_path):
