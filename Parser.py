@@ -18,7 +18,7 @@ def analysis_File(file_path):
         printTitle("Dir Info")        
         file_list=get_file_dir(file_path)
         for filename in file_list:
-            print filename
+            print ' *'+filename
         printContentTypeInfo(file_path)
         
         # printReport(file_path)
@@ -28,8 +28,13 @@ def analysis_File(file_path):
             check_doc_info(file_path)
         if getActiveXInfo(file_path) or flash_match >0:
             process_flash(file_path, r'D:\tmp')
-        # if flash_match > 0:
-        #     process_flash(file_path, r'D:\tmp')
+        printTitle("VBA Info")
+        vba_result=check_VBA_info(file_path)
+        if vba_result != None:
+            print "This file contain VBA file. path: %s" % (vba_result)
+            extract_vba_script(file_path)
+        else:
+            print "This file contain No VBA file"
     else:
         print("File doesnt exsist or cannot be analysis")
 
@@ -60,8 +65,11 @@ def get_File_Type(file_path):
 def print_File_info(file_path):
     printTitle("File info")
     file_type=get_File_Type(file_path)
-    print "File Type: "+file_type
-    print "File Path: "+file_path
+    file_size=os.path.getsize('C:\\Python27\\Lib\\genericpath.py')
+    print "File Type: ",file_type
+    print "File Path: ",file_path
+    print "File size: %s KB" % (file_size)
+    return {file_path, file_type, file_size}
  
 def printReport(file_path):
     print_File_info(file_path)
@@ -111,8 +119,8 @@ def check_vml_info(file_path):
         if re.search(vml_path_pattern,dir_path.filename)!=None:
             real_vml_path.append(dir_path.filename)
                 #printFileContent(vml_path)            
-    print(real_vml_path)
-    if real_vml_path != None:
+    #print(real_vml_path)
+    if len(real_vml_path)>0:
         for path in real_vml_path:
             content=parseFile(file_path,path)
             flash_result=re.findall(flash_string,json.dumps(content, indent=4))
@@ -136,6 +144,16 @@ def check_doc_info(file_path):
     flash_match+=len(flash_result)
     print(doc_path+" find "+str(len(flash_result))+" flash string match")
 
+
+def check_VBA_info(file_path):    
+    vba_file='vbaProject.bin'
+    found=None
+    file_list=get_file_dir(file_path)
+    for filename in file_list:
+        if filename.endswith(vba_file):
+            found=filename
+            break    
+    return found
 
 def printFileContent(file_path,file_name):
     printTitle("Content of File:"+file_name)
@@ -189,12 +207,12 @@ def printContentTypeInfo(file_path):
     #json=>content['Types']['Override'][0]['@PartName']    
     """
     print("[Check ActiveX related file type]:")
-    print("files with Override type 'application/vnd.ms-office.activeX+xml':")
+    print(" files with Override type 'application/vnd.ms-office.activeX+xml':")
     for attri in content['Types']['Override']:
         if attri['@ContentType']==activeX_contentType:            
             activeX_List.append(attri['@PartName'])
     for item in activeX_List:
-        print("*"+item)
+        print(" *"+item)
 
     """
     check Default attri
@@ -206,10 +224,10 @@ def printContentTypeInfo(file_path):
             flag=True
         exten_List.append(attri['@Extension'])
     if flag:
-        print("file contain ActiveX default file type")
+        print(" file contain ActiveX default file type")
     print("[Extension List]:")
     for item in exten_List:
-        print("*"+item)
+        print(" *"+item)
 
 def getValue(file_path,file_name,tag_name):
     content=parseFile(file_path,file_name)   
@@ -236,7 +254,34 @@ def process_flash(file_path, des_file_path):
     #swf_util.extract_actionscript("D:\\tmp\\flash2.pptx_FWS_00000C08","D:\\open_xml\\flash2.txt")
     # _file = open(r'C:\Users\Ash\Desktop\swf\twist.swf', 'rb')
     # print SWF(_file)
+def extract_file(file_path):
+    file_name=os.path.basename(file_path) 
+    des_path=os.path.join(os.path.dirname(file_path),file_name+"_files")
+    if not os.path.exists(des_path) or not os.path.isdir(des_path):
+            os.makedirs(des_path)
+    #print des_dir;
+    if zipfile.is_zipfile(file_path):
+        dfile=zipfile.ZipFile(file_path,'r')        
+        dfile.extractall(des_path)
+        print "Extract "+file_name+" to: "+des_path+" Successfully"
+    return des_path
 
+
+def extract_vba_script(file_path):
+    vba_path=check_VBA_info(file_path);
+    if vba_path!= None:
+        #print vba_path
+        ex_path=extract_file(file_path)
+        vba_path=ex_path+'\\'+vba_path.replace('/','\\')
+        #print vba_path
+        officeMalscanner_path = os.path.join(os.path.dirname(__file__), '\prog\OfficeMalScanner\officeMalscanner.exe')
+        #print officeMalscanner_path;
+        command='.'+officeMalscanner_path+" "+vba_path+" info"
+        #print command
+        content = ''.join(os.popen(command).readlines())
+        print content
+
+    
 
 
 if __name__ == '__main__':  # pragma: no cover
@@ -249,7 +294,10 @@ if __name__ == '__main__':  # pragma: no cover
     # file_name2=r"word/document.xml"
     # file_name3=r"file/[Content_Types].xml"
     # file_name4=r"[Content_Types].xml"
-    
+    print "\n+------------------------------------------+\n",
+    print "|           Open_xml Parser v1.0           |\n",
+    #print "|                                          |\n",
+    print "+------------------------------------------+\n",
     if len(sys.argv)>2:
         if sys.argv[1] == "-a":
             if len(sys.argv) == 3:
@@ -273,7 +321,9 @@ if __name__ == '__main__':  # pragma: no cover
                 print("-pct [file_path]                        => print [Content_Types].xml")
         elif(sys.argv[1] == "-pdir") :
             if len(sys.argv) == 3:
-                printDir(sys.argv[2])
+                name_list=get_file_dir(sys.argv[2])
+                for name in name_list:
+                    print name;  
             else:
                 print("-pdir [file_path]                       => print unzip dir")
         elif(sys.argv[1] == "-pvml") :
