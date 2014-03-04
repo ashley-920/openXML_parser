@@ -8,10 +8,24 @@ import swf_util
 
 flash_match=0
 listview_match=0
+des_path=''
+
+
+def load_des_path():    
+    global des_path
+    config_path=os.path.join(os.path.dirname(__file__), "config.txt")
+    f=open(config_path,"r")
+    path=f.read()
+    path=path.split("=")
+    des_path=path[-1]
+    return des_path
+
 
 def analysis_File(file_path):
     #print(file_path)
     #if zipfile.is_zipfile(file_path) and check_File_Type(get_File_Type(file_path)):  
+    global des_path
+    load_des_path()
     if zipfile.is_zipfile(file_path):
         filetype=get_File_Type(file_path)
         print_File_info(file_path)
@@ -27,7 +41,7 @@ def analysis_File(file_path):
         elif filetype == 'DOCX':
             check_doc_info(file_path)
         if getActiveXInfo(file_path) or flash_match >0:
-            process_flash(file_path, r'D:\tmp')
+            process_flash(file_path, des_path)
         printTitle("VBA Info")
         vba_result=check_VBA_info(file_path)
         if vba_result != None:
@@ -35,6 +49,7 @@ def analysis_File(file_path):
             extract_vba_script(file_path)
         else:
             print "This file contain No VBA file"
+        
     else:
         print("File doesnt exsist or cannot be analysis")
 
@@ -65,7 +80,7 @@ def get_File_Type(file_path):
 def print_File_info(file_path):
     printTitle("File info")
     file_type=get_File_Type(file_path)
-    file_size=os.path.getsize('C:\\Python27\\Lib\\genericpath.py')
+    file_size=os.path.getsize(file_path)
     print "File Type: ",file_type
     print "File Path: ",file_path
     print "File size: %s KB" % (file_size)
@@ -238,18 +253,26 @@ def getValue(file_path,file_name,tag_name):
 
 def process_flash(file_path, des_file_path):
     #flash.process_file(file_path, des_file_path)
+    global des_path
+    if des_file_path == None:
+        des_file_path=load_des_path()
     printTitle("Process flash")    
     file_name=os.path.basename(file_path)
     #print file_name
-    if check_File_Type(get_File_Type(file_path)):
-        name=flash.process_file(file_path,des_file_path) 
-        print 'Extract %s swf file to:' % (len(name)) 
-        for swf in name:
-            print '*%s' % (swf)
-            swf_util.extract_actionscript(swf,swf+".txt")
-    else:
+    if zipfile.is_zipfile(file_path):
+        if check_File_Type(get_File_Type(file_path)):
+            name=flash.process_file(file_path,des_file_path)
+            if len(name)<1:
+                print "Cannot find swf in bin file"
+            else: 
+                print 'Extract %s swf file to:' % (len(name)) 
+                for swf in name:
+                    print '*%s' % (swf)
+                    swf_util.extract_actionscript(swf,swf+".txt")
+    elif flash.detect_swf(file_path):
         swf_util.extract_actionscript(file_path,des_file_path+"\\"+file_name+".txt")
-   
+    else:
+        print "This file cannot be process"   
 
     #swf_util.extract_actionscript("D:\\tmp\\flash2.pptx_FWS_00000C08","D:\\open_xml\\flash2.txt")
     # _file = open(r'C:\Users\Ash\Desktop\swf\twist.swf', 'rb')
@@ -332,10 +355,12 @@ if __name__ == '__main__':  # pragma: no cover
             else:
                 print("-pvml [file_path]                       => print vmlDrawing.xml info")
         elif(sys.argv[1] == "-e") :
-            if len(sys.argv) == 4:
-                process_flash(sys.argv[2],sys.argv[3])
+            if len(sys.argv) == 4 :                
+                process_flash(sys.argv[2],sys.argv[3])                   
+            elif len(sys.argv)==3:
+                process_flash(sys.argv[2],None)
             else:
-                print("-e [file_path] [dest_dir_path]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
+                print("-e [file_path] [dest_dir_path (optional)]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
         else:
             print("-a [file_path]                          => analysis file")
             print("-pct [file_path]                        => print [Content_Types].xml")
@@ -343,7 +368,7 @@ if __name__ == '__main__':  # pragma: no cover
             print("-pvml [file_path]                       => print vmlDrawing.xml info")
             print("-pfc [file_path] [file_name]            => print file content")
             print("-g [file_path] [file_name] [tag_name]   => get specific value of specific tag from specific file")
-            print("-e [file_path] [dest_dir_path]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
+            print("-e [file_path] [dest_dir_path (optional)]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
     else:
         print("-a [file_path]                          => analysis file")
         print("-pct [file_path]                        => print [Content_Types].xml")
@@ -351,7 +376,7 @@ if __name__ == '__main__':  # pragma: no cover
         print("-pvml [file_path]                       => print vmlDrawing.xml info")
         print("-pfc [file_path] [file_name]            => print file content")
         print("-g [file_path] [file_name] [tag_name]   => get specific value of specific tag from specific file")
-        print("-e [file_path] [dest_dir_path]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
+        print("-e [file_path] [dest_dir_path (optional)]          => extrace swf files from the file path and extract actionscript of the swf files to txt file")
     #process_flash("D:\\open_xml\\flash2.pptx","D:\\tmp")
     
     # file_parser.analysis_File(file_path4)    

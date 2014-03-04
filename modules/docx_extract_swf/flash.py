@@ -7,18 +7,22 @@ import mmap
 import shutil
 import binascii, struct
 import ctypes, ctypes.wintypes
+import subprocess
+import zipfile
 
 #temp_path = 'D:\\tmp' # ram disk
+des_dir=''
 temp_path=''
 swf_file_name=[]
+filename=''
 
 def mkdir_temp(tmp):
 	global temp_path
 	#print temp_path
 	unzip = os.path.join(temp_path, tmp)
-	#print unzip
+	# print unzip
 	if not os.path.exists(unzip):
-		os.mkdir(unzip, 666)
+		os.mkdir(unzip)
 	return unzip
 
 def del_temp(tmp):
@@ -28,68 +32,45 @@ def del_temp(tmp):
 		shutil.rmtree(unzip, True)
 
 def process_file(file_path, des_file_path):
-	global temp_path	
-	temp_path=des_file_path
+	global des_dir
+	global temp_path
+	global filename	
+	des_dir=des_file_path
+	filename=os.path.basename(file_path)
+	# filename=filename.replace(" ","_")
+	temp_path=des_file_path+"\\"+filename
 	mkdir_temp(temp_path)
 	#size = os.path.getsize(file_path)
 	#print "%s %d" % (file_path, size)	
 	filetype = ''
-	#temp = os.path.join(os.environ['TEMP'], fn)
-	# temp = os.path.join("z:\\tmp", fn)
-	# if os.path.exists(temp):
-	# 	os.unlink(temp)
+	open(file_path,"rb")
+	# print file_path
+	# print temp_path
+	dfile=zipfile.ZipFile(file_path)
+	dfile.extractall(temp_path)
+	for name in dfile.namelist():
+		if name.endswith(".bin"):
+			# print name
+			name=name.replace("/","\\")			
+			detect_swf(temp_path+"\\"+name)
 
-	#shutil.copy2(file_path, temp)
-	# upath = temp.encode('cp950', 'ignore')
-	upath = file_path.encode('cp950', 'ignore')
-	#upath = file_path
 
-	prog_7z = os.path.join(os.path.dirname(__file__), '7z.exe')
-	#print upath
-	content = ''.join(os.popen(prog_7z + " l " + '"' + upath + '"').readlines())
-	#print content	
-	bound="------------------- ----- ------------ ------------  ------------------------\n"
-	content = content[content.find(bound)+len(bound):content.rfind(bound)]
-	
-	flist = []
-	for m in content.split('\n'):
-		if not m[20:21] == 'D' and len(m) > 0:
-			daten = m[:19]
-			filen = m[53:]
-			flist.append([daten, filen])
+	# if filetype != None and active == 1:
+	# print "process_file"
+	# 	# print file_path
+	# fn = os.path.basename(file_path)
+	# unzip = mkdir_temp(fn)
+	# 	#print("unzip",unzip)
+	# # testpw = ''.join(os.popen(prog_7z + ' e -y -o"' + unzip + '" "' + file_path + '"').readlines())
 
-	active = 0
-	for i in map(None, flist):
-		fl = i[1].lower()
-		if "word\\document.xml" in fl:
-			filetype = 'DOCX'
-		elif "xl\\workbook.xml" in fl:
-			filetype = 'XLSX'
-		elif "ppt\\presentation.xml" in fl:
-			filetype = 'PPTX'
-		import re
-		reobj = re.search("activeX\d+\.bin", fl, re.I)
-		if reobj:
-			active = 1
-
-	# if os.path.exists(temp):
-	# 	os.unlink(temp)
-
-	if filetype != None and active == 1:
-		# print file_path
-		fn = os.path.basename(file_path)
-		unzip = mkdir_temp(fn)
-		#print("unzip",unzip)
-		testpw = ''.join(os.popen(prog_7z + ' e -y -o"' + unzip + '" "' + file_path + '"').readlines())
-
-		listfile = []
-		for root, dirs, files in os.walk(unzip):
-			for name in files:
-				if re.search(r'ActiveX\d+.bin', name, re.I) is not None:
-					listfile.append(os.path.join(root, name))
-		for i in listfile:
-			detect_swf(i)
-		del_temp(fn)
+	# listfile = []
+	# for root, dirs, files in os.walk(unzip):
+	# 	for name in files:
+	# 		if re.search(r'ActiveX\d+.bin', name, re.I) is not None:
+	# 			listfile.append(os.path.join(root, name))
+	# for i in listfile:
+	# 	detect_swf(i)
+	# del_temp(fn)
 	return swf_file_name
 
 def getOffsetInFile(pattern, fn):
@@ -102,9 +83,11 @@ def getOffsetInFile(pattern, fn):
 			offs.append(m.start()/2)
 		return offs
 
-def extract_swf(file_path, file_content, offset):
+def extract_swf(bin_path, file_content, offset):
+	global des_dir
+	global filename
+	# print "extract_swf"
 	data = file_content
-
 	i = 0
 	for offs in offset:
 		if data[offs:offs+3] == 'FWS' or data[offs:offs+3] == 'CWS':
@@ -114,31 +97,39 @@ def extract_swf(file_path, file_content, offset):
 			# print data[offs:offs+3]
 				swf_len = struct.unpack('i', data[offs+4:offs+8])[0]
 			# print swf_len
-				newfile = "%s_%s_%08X" % (file_path[:file_path.rfind('\\')], data[offs:offs+3], offs)
-				f = open(newfile, 'wb')
+				# file_name=file_path[:file_path.rfind('\\')]
+				bin_name=os.path.basename(bin_path)
+				bin_name=bin_name.replace(" ","_")
+				bin_name=bin_name.replace(".","_")
+				newfile = "[%s]_%s_%s_%08X" % (filename,bin_name, data[offs:offs+3], offs)
+				f = open(des_dir+"\\"+newfile, 'wb')
 				f.write(data[offs:offs+swf_len])
 				f.close()
-	return newfile
+	return des_dir+"\\"+newfile
 
 def detect_swf(file_path):
 	global swf_file_name
 	f = open(file_path, 'rb')
 	swf = f.read()
 	f.close()
+	found=False
 
 	cws = getOffsetInFile(str.upper(binascii.hexlify('CWS')), swf)
 	if cws:
-		#print cws
+		# print cws
 		#print file_path
 		name=extract_swf(file_path, swf, cws)
 		swf_file_name.append(name)
+		found=True
 
 	fws = getOffsetInFile(str.upper(binascii.hexlify('FWS')), swf)
 	if fws:
-		#print fws
+		# print fws
 		#print file_path
 		name=extract_swf(file_path, swf, fws)
 		swf_file_name.append(name)
+		found=True
+	return found
 
 
 def find_file(dir_name):
