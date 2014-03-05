@@ -10,6 +10,7 @@ flash_match=0
 listview_match=0
 des_path=''
 dir_path=''
+filename=''
 
 
 def load_des_path():    
@@ -26,8 +27,12 @@ def analysis_File(file_path):
     #print(file_path)
     #if zipfile.is_zipfile(file_path) and check_File_Type(get_File_Type(file_path)):  
     global des_path
+    global filename
     load_des_path()
     if zipfile.is_zipfile(file_path):
+        filename=os.path.basename(file_path)
+        des_path=os.path.join(des_path,filename)
+        print "des_path="+des_path
         extract_file(file_path)
         filetype=get_File_Type(file_path)
         print_File_info(file_path)

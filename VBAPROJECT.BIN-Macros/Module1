@@ -1,9 +1,0 @@
-Attribute VB_Name = "Module1"
-Sub vba()
-'
-' vba ??
-'
-' ???: Ctrl+y
-'
-    Response.write ("Hello World")
-End Sub
