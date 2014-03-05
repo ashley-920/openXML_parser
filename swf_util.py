@@ -1,11 +1,11 @@
-import os, subprocess as sub
+import os, zipfile, subprocess as sub
 
 file_path="C:\\Users\\Ash\\Desktop\\swf\\activeX1.swf"
 des_text_path="C:\\Users\\Ash\\Desktop\\action_result.txt"
 mod_dir= "\\prog\\swftools\\swfdump.exe"
 
 
-#print prog_swftools
+
 
 def extract_actionscript(file_path,des_text_path):
 	#print os.path.dirname(__file__)

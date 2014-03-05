@@ -1,10 +1,7 @@
-import zipfile, xmltodict, json, dpath.util, os, re, sys, traceback
+import zipfile, xmltodict, json, dpath.util, os, re, sys, traceback, distutils.core
 from modules.docx_extract_swf import flash as flash
-#from swf.movie import SWF
-import swf_util
+import swf_util,subprocess as sub
 
-#from lxml import etree
-#import xml.etree.ElementTree as etree
 
 flash_match=0
 listview_match=0
@@ -47,7 +44,7 @@ def analysis_File(file_path):
             check_vml_info(file_path)
         elif filetype == 'DOCX':
             check_doc_info(file_path)
-        if getActiveXInfo(file_path) or flash_match >0:
+        if getActiveXInfo(file_path) or flash_match >0:            
             process_flash(file_path, des_path)
         printTitle("VBA Info")
         vba_result=check_VBA_info(file_path)
@@ -281,9 +278,6 @@ def process_flash(file_path, des_file_path):
     else:
         print "This file cannot be process"   
 
-    #swf_util.extract_actionscript("D:\\tmp\\flash2.pptx_FWS_00000C08","D:\\open_xml\\flash2.txt")
-    # _file = open(r'C:\Users\Ash\Desktop\swf\twist.swf', 'rb')
-    # print SWF(_file)
 def extract_file(file_path):
     global des_path
     global dir_path
@@ -303,18 +297,22 @@ def extract_file(file_path):
 
 
 def extract_vba_script(file_path):
-    vba_path=check_VBA_info(file_path);
+    global des_path
+    officeMalscanner_path = os.path.join(os.path.dirname(__file__), '\prog\OfficeMalScanner\officeMalscanner.exe')
+    vba_path=check_VBA_info(file_path)
+    default_des_path=os.path.join(os.path.dirname(__file__),'\VBAPROJECT.BIN-Macros')
     if vba_path!= None:
         #print vba_path
         ex_path=extract_file(file_path)
         vba_path=ex_path+'\\'+vba_path.replace('/','\\')
         #print vba_path
-        officeMalscanner_path = os.path.join(os.path.dirname(__file__), '\prog\OfficeMalScanner\officeMalscanner.exe')
         #print officeMalscanner_path;
         command='.'+officeMalscanner_path+" "+vba_path+" info"
         #print command
-        content = ''.join(os.popen(command).readlines())
-        print content
+        sub.Popen(command,shell=True, stdout=sub.PIPE, stderr=sub.STDOUT)
+
+        distutils.dir_util.copy_tree("C:\Users\Ash\Desktop\python\openXML_parser\VBAPROJECT.BIN-Macros",des_path+r"\vba_script")
+        # print content
 
     
 
